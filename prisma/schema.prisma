@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+
+model LottoAgent {
+  AgentID   Int     @id @default(autoincrement())
+  AgentName String
+  Location  String?
+
+  dailySalesSummaries     DailySalesSummary[]
+  dailyTicketCountRecords DailyTicketCountRecord[]
+}
+
+model MassLotteryCommission {
+  CommissionID    Int     @id @default(autoincrement())
+  CommissionName  String
+  ReportingRegion String?
+
+  games               Game[]
+  dailySalesSummaries DailySalesSummary[]
+}
+
+model DailySalesSummary {
+  SummaryID               Int      @id @default(autoincrement())
+  SummaryDate             DateTime
+  SalesDollarsByDispenser Decimal?
+  TotalTicketsSold        Int
+  TotalOTCSales           Decimal
+  DailyControlSummary     String?
+
+  CommissionID Int
+  AgentID      Int
+
+  commission MassLotteryCommission @relation(fields: [CommissionID], references: [CommissionID])
+  agent      LottoAgent            @relation(fields: [AgentID], references: [AgentID])
+
+  ticketCountRecords DailyTicketCountRecord[]
+}
+
+model DailyTicketCountRecord {
+  RecordID           Int      @id @default(autoincrement())
+  RecordDate         DateTime
+  StartTicketNumber  Int
+  EndingTicketNumber Int
+  SoldOutStatus      String
+  TicketsSold        Int
+
+  SummaryID   Int
+  DispenserID Int
+  AgentID     Int
+
+  summary   DailySalesSummary @relation(fields: [SummaryID], references: [SummaryID])
+  dispenser Dispenser         @relation(fields: [DispenserID], references: [DispenserID])
+  agent     LottoAgent        @relation(fields: [AgentID], references: [AgentID])
+}
+
+model Game {
+  GameID           Int     @id @default(autoincrement())
+  GameNumber       Int
+  GameName         String
+  TicketValue      Int
+  PackNumber       Int
+  ActiveGameStatus String?
+
+  CommissionID Int
+
+  commission MassLotteryCommission @relation(fields: [CommissionID], references: [CommissionID])
+  assignedTo AssignedTo[]
+}
+
+model Dispenser {
+  DispenserID         Int     @id @default(autoincrement())
+  DispenserNumber     Int
+  DispenserAssignment String?
+  DispenserLayout     String?
+  PositionStatus      String
+
+  ticketCountRecords DailyTicketCountRecord[]
+  assignedTo         AssignedTo[]
+}
+
+model AssignedTo {
+  GameID      Int
+  DispenserID Int
+
+  game      Game      @relation(fields: [GameID], references: [GameID])
+  dispenser Dispenser @relation(fields: [DispenserID], references: [DispenserID])
+
+  @@id([GameID, DispenserID])
+  @@map("assigned_to")
+}
