@@ -21,6 +21,7 @@ const ADMIN_TABLES = [
     fields: [
       { name: "AgentName", label: "Agent Name", type: "text", required: true },
       { name: "Location", label: "Location", type: "text" },
+      { name: "CommissionID", label: "Commission ID", type: "number" },
     ],
   },
   {
@@ -47,6 +48,8 @@ const ADMIN_TABLES = [
       { name: "DispenserAssignment", label: "Dispenser Assignment", type: "text" },
       { name: "DispenserLayout", label: "Dispenser Layout", type: "text" },
       { name: "PositionStatus", label: "Position Status", type: "text", required: true },
+      { name: "GameID", label: "Game ID", type: "number" },
+      { name: "AgentID", label: "Agent ID", type: "number" },
     ],
   },
   {
@@ -75,21 +78,10 @@ const ADMIN_TABLES = [
       { name: "EndingTicketNumber", label: "Ending Ticket Number", type: "number", required: true },
       { name: "SoldOutStatus", label: "Sold Out Status", type: "text", required: true },
       { name: "TicketsSold", label: "Tickets Sold", type: "number", required: true },
-      { name: "SummaryID", label: "Summary ID", type: "number", required: false },
+      { name: "SummaryID", label: "Summary ID", type: "number" },
       { name: "DispenserID", label: "Dispenser ID", type: "number", required: true },
       { name: "GameID", label: "Game ID", type: "number", required: true },
       { name: "AgentID", label: "Agent ID", type: "number", required: true },
-    ],
-  },
-  {
-    key: "assignedTo",
-    label: "Assigned Games To Dispensers",
-    endpoint: "/api/admin/assigned-to",
-    idFields: ["GameID", "DispenserID"],
-    fields: [
-      { name: "GameID", label: "Game ID", type: "number", required: true },
-      { name: "DispenserID", label: "Dispenser ID", type: "number", required: true },
-      // { name: "stuff", label: "stuff", type: "text", required: false },
     ],
   },
 ];
@@ -141,7 +133,7 @@ function CrudSection({ table }) {
       ]),
     ];
   }, [table]);
-  
+
   async function loadRecords() {
     setLoading(true);
 

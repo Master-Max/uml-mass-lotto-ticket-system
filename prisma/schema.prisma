@@ -16,6 +16,10 @@ model LottoAgent {
   AgentName String
   Location  String?
 
+  CommissionID Int?
+  commission   MassLotteryCommission? @relation(fields: [CommissionID], references: [CommissionID])
+
+  dispensers              Dispenser[]
   dailySalesSummaries     DailySalesSummary[]
   dailyTicketCountRecords DailyTicketCountRecord[]
 }
@@ -25,6 +29,7 @@ model MassLotteryCommission {
   CommissionName  String
   ReportingRegion String?
 
+  agents              LottoAgent[]
   games               Game[]
   dailySalesSummaries DailySalesSummary[]
 }
@@ -76,7 +81,7 @@ model Game {
   CommissionID Int
 
   commission              MassLotteryCommission    @relation(fields: [CommissionID], references: [CommissionID])
-  assignedTo              AssignedTo[]
+  dispensers              Dispenser[]
   dailyTicketCountRecords DailyTicketCountRecord[]
 }
 
@@ -87,17 +92,11 @@ model Dispenser {
   DispenserLayout     String?
   PositionStatus      String
 
+  GameID Int?
+  game   Game? @relation(fields: [GameID], references: [GameID])
+
+  AgentID Int?
+  agent   LottoAgent? @relation(fields: [AgentID], references: [AgentID])
+
   ticketCountRecords DailyTicketCountRecord[]
-  assignedTo         AssignedTo[]
-}
-
-model AssignedTo {
-  GameID      Int
-  DispenserID Int
-
-  game      Game      @relation(fields: [GameID], references: [GameID])
-  dispenser Dispenser @relation(fields: [DispenserID], references: [DispenserID])
-
-  @@id([GameID, DispenserID])
-  @@map("assigned_to")
 }

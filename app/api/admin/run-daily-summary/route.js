@@ -6,9 +6,6 @@ export async function POST() {
     const agent = await prisma.lottoAgent.findFirst();
     const commission = await prisma.massLotteryCommission.findFirst();
 
-    console.log(agent)
-    console.log(commission)
-
     if (!agent || !commission) {
       return NextResponse.json(
         { error: "You need at least one LottoAgent and one Commission first." },
@@ -16,61 +13,61 @@ export async function POST() {
       );
     }
 
-    const today = new Date();
+    const now = new Date();
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    ));
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const endOfDay = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0
+    ));
 
-
-    // 1. Get today's ticket records
-    // const records = await prisma.
-
-    // const records = await prisma.dailyTicketCountRecord.findMany()
 
     const records = await prisma.dailyTicketCountRecord.findMany({
       where: {
         RecordDate: {
           gte: startOfDay,
-          lte: endOfDay,
+          lt: endOfDay,
         },
+        AgentID: agent.AgentID,
       },
       include: {
-        dispenser: {
-          include: {
-            assignedTo: {
-              include: {
-                game: true,
-              },
-            },
-          },
-        },
+        game: true,
+        dispenser: true,
       },
     });
 
-
-    console.log(records)
-    
-    // return Response.json({message: 'Testing 123', status: 500})
+    if (records.length === 0) {
+      return NextResponse.json(
+        { error: "No ticket count records found for today." },
+        { status: 400 }
+      );
+    }
 
     let totalTicketsSold = 0;
     let totalOTCSales = 0;
 
-    const dispenserTotals = {}; // { dispenserId: dollars }
+    const dispenserTotals = {};
 
     for (const record of records) {
-      totalTicketsSold += record.TicketsSold;
+      const ticketsSold = Number(record.TicketsSold || 0);
+      const ticketValue = Number(record.game?.TicketValue || 0);
+      const sales = ticketsSold * ticketValue;
 
-      // get the game assigned to this dispenser
-      const assignment = record.dispenser.assignedTo[0]; // latest/only for now
-      const game = assignment?.game;
-
-      const ticketValue = game?.TicketValue || 0;
-
-      const sales = record.TicketsSold * ticketValue;
-
+      totalTicketsSold += ticketsSold;
       totalOTCSales += sales;
 
       if (!dispenserTotals[record.DispenserID]) {
@@ -80,24 +77,59 @@ export async function POST() {
       dispenserTotals[record.DispenserID] += sales;
     }
 
-    // const salesDollarsByDispenser = JSON.stringify(dispenserTotals);
-    const salesDollarsByDispenser = totalOTCSales;
-
-    const summary = await prisma.dailySalesSummary.create({
-      data: {
-        SummaryDate: today,
-        TotalTicketsSold: totalTicketsSold,
-        TotalOTCSales: totalOTCSales,
-        SalesDollarsByDispenser: salesDollarsByDispenser,
-        DailyControlSummary: "Generated from admin dashboard",
+    const existingSummary = await prisma.dailySalesSummary.findFirst({
+      where: {
+        SummaryDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
         AgentID: agent.AgentID,
         CommissionID: commission.CommissionID,
       },
     });
 
-    return NextResponse.json(summary);
+    const summaryData = {
+      SummaryDate: now,
+      TotalTicketsSold: totalTicketsSold,
+      TotalOTCSales: totalOTCSales,
+      SalesDollarsByDispenser: totalOTCSales,
+      DailyControlSummary: JSON.stringify(dispenserTotals),
+      AgentID: agent.AgentID,
+      CommissionID: commission.CommissionID,
+    };
+
+    const summary = existingSummary
+      ? await prisma.dailySalesSummary.update({
+          where: {
+            SummaryID: existingSummary.SummaryID,
+          },
+          data: summaryData,
+        })
+      : await prisma.dailySalesSummary.create({
+          data: summaryData,
+        });
+
+    await prisma.dailyTicketCountRecord.updateMany({
+      where: {
+        RecordDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        AgentID: agent.AgentID,
+      },
+      data: {
+        SummaryID: summary.SummaryID,
+      },
+    });
+
+    return NextResponse.json({
+      summary,
+      recordsLinked: records.length,
+      dispenserTotals,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("POST /api/admin/run-daily-summary error:", error);
+
     return NextResponse.json(
       { error: "Failed to run daily sales summary" },
       { status: 500 }

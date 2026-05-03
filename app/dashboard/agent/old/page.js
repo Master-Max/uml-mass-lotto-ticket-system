@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function AgentDashboard() {
-  const searchParams = useSearchParams();
-  const agentId = searchParams.get("id");
-
-  const [agent, setAgent] = useState(null);
   const [summaries, setSummaries] = useState([]);
   const [dispensers, setDispensers] = useState([]);
 
@@ -19,29 +14,20 @@ export default function AgentDashboard() {
   });
 
   useEffect(() => {
-    if (agentId) {
-      loadData(agentId);
-    }
-  }, [agentId]);
+    loadData();
+  }, []);
 
-  async function loadData(id) {
-    const [agentRes, summaryRes, dispenserRes] = await Promise.all([
-      fetch(`/api/agents/${id}`),
-      fetch(`/api/summaries?agentId=${id}`),
-      fetch(`/api/dispensers?agentId=${id}`),
+  async function loadData() {
+    const [summaryRes, dispenserRes] = await Promise.all([
+      fetch("/api/summaries"),
+      fetch("/api/dispensers"),
     ]);
 
-    if (agentRes.ok) setAgent(await agentRes.json());
     if (summaryRes.ok) setSummaries(await summaryRes.json());
     if (dispenserRes.ok) setDispensers(await dispenserRes.json());
   }
 
   async function createDispenser() {
-    if (!agentId) {
-      alert("Missing agent ID");
-      return;
-    }
-
     const res = await fetch("/api/dispensers", {
       method: "POST",
       headers: {
@@ -50,7 +36,6 @@ export default function AgentDashboard() {
       body: JSON.stringify({
         ...dispenserForm,
         DispenserNumber: Number(dispenserForm.DispenserNumber),
-        AgentID: Number(agentId),
       }),
     });
 
@@ -68,35 +53,12 @@ export default function AgentDashboard() {
       PositionStatus: "Active",
     });
 
-    loadData(agentId);
-  }
-
-  if (!agentId) {
-    return (
-      <div className="p-6">
-        <h1 className="text-xl font-bold">Missing Agent ID</h1>
-        <p className="text-gray-600">
-          Use a URL like <code>/dashboard/agent?id=1</code>
-        </p>
-      </div>
-    );
+    loadData();
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-1">
-        {agent ? agent.AgentName : "Agent Dashboard"}
-      </h1>
-
-      <p className="text-sm text-gray-600 mb-4">
-        {agent?.Location || "No location listed"}
-      </p>
-
-      {agent?.commission && (
-        <p className="text-sm text-gray-600 mb-4">
-          Commission: {agent.commission.CommissionName}
-        </p>
-      )}
+      <h1 className="text-xl font-bold mb-4">Agent Dashboard</h1>
 
       <section className="border p-4 rounded mb-6">
         <h2 className="font-semibold mb-3">Create Dispenser</h2>
