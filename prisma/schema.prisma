@@ -9,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url = env("DATABASE_URL")
 }
 
 model LottoAgent {
@@ -55,13 +54,15 @@ model DailyTicketCountRecord {
   SoldOutStatus      String
   TicketsSold        Int
 
-  SummaryID   Int
+  SummaryID   Int?
   DispenserID Int
+  GameID      Int
   AgentID     Int
 
-  summary   DailySalesSummary @relation(fields: [SummaryID], references: [SummaryID])
-  dispenser Dispenser         @relation(fields: [DispenserID], references: [DispenserID])
-  agent     LottoAgent        @relation(fields: [AgentID], references: [AgentID])
+  summary   DailySalesSummary? @relation(fields: [SummaryID], references: [SummaryID])
+  dispenser Dispenser          @relation(fields: [DispenserID], references: [DispenserID])
+  game      Game               @relation(fields: [GameID], references: [GameID])
+  agent     LottoAgent         @relation(fields: [AgentID], references: [AgentID])
 }
 
 model Game {
@@ -74,8 +75,9 @@ model Game {
 
   CommissionID Int
 
-  commission MassLotteryCommission @relation(fields: [CommissionID], references: [CommissionID])
-  assignedTo AssignedTo[]
+  commission              MassLotteryCommission    @relation(fields: [CommissionID], references: [CommissionID])
+  assignedTo              AssignedTo[]
+  dailyTicketCountRecords DailyTicketCountRecord[]
 }
 
 model Dispenser {

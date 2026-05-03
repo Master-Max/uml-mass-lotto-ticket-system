@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -6,10 +7,10 @@ export async function GET() {
       orderBy: { AgentID: "asc" },
     });
 
-    return Response.json(agents);
+    return NextResponse.json(agents);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to fetch agents" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch agents" }, { status: 500 });
   }
 }
 
@@ -24,10 +25,10 @@ export async function POST(req) {
       },
     });
 
-    return Response.json(agent);
+    return NextResponse.json(agent);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to create agent" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create agent" }, { status: 500 });
   }
 }
 
@@ -43,10 +44,10 @@ export async function PUT(req) {
       },
     });
 
-    return Response.json(agent);
+    return NextResponse.json(agent);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to update agent" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update agent" }, { status: 500 });
   }
 }
 
@@ -58,9 +59,9 @@ export async function DELETE(req) {
       where: { AgentID: body.AgentID },
     });
 
-    return Response.json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to delete agent" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete agent" }, { status: 500 });
   }
 }

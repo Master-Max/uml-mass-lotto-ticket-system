@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST() {
@@ -5,8 +6,11 @@ export async function POST() {
     const agent = await prisma.lottoAgent.findFirst();
     const commission = await prisma.massLotteryCommission.findFirst();
 
+    console.log(agent)
+    console.log(commission)
+
     if (!agent || !commission) {
-      return Response.json(
+      return NextResponse.json(
         { error: "You need at least one LottoAgent and one Commission first." },
         { status: 400 }
       );
@@ -14,11 +18,24 @@ export async function POST() {
 
     const today = new Date();
 
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
 
     // 1. Get today's ticket records
+    // const records = await prisma.
+
+    // const records = await prisma.dailyTicketCountRecord.findMany()
+
     const records = await prisma.dailyTicketCountRecord.findMany({
       where: {
-        RecordDate: today,
+        RecordDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
       },
       include: {
         dispenser: {
@@ -32,6 +49,11 @@ export async function POST() {
         },
       },
     });
+
+
+    console.log(records)
+    
+    // return Response.json({message: 'Testing 123', status: 500})
 
     let totalTicketsSold = 0;
     let totalOTCSales = 0;
@@ -73,10 +95,10 @@ export async function POST() {
       },
     });
 
-    return Response.json(summary);
+    return NextResponse.json(summary);
   } catch (error) {
     console.error(error);
-    return Response.json(
+    return NextResponse.json(
       { error: "Failed to run daily sales summary" },
       { status: 500 }
     );

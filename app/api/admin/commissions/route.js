@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -6,10 +7,10 @@ export async function GET() {
       orderBy: { CommissionID: "asc" },
     });
 
-    return Response.json(commissions);
+    return NextResponse.json(commissions);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to fetch commissions" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch commissions" }, { status: 500 });
   }
 }
 
@@ -24,10 +25,10 @@ export async function POST(req) {
       },
     });
 
-    return Response.json(commission);
+    return NextResponse.json(commission);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to create commission" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create commission" }, { status: 500 });
   }
 }
 
@@ -43,10 +44,10 @@ export async function PUT(req) {
       },
     });
 
-    return Response.json(commission);
+    return NextResponse.json(commission);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to update commission" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update commission" }, { status: 500 });
   }
 }
 
@@ -58,9 +59,9 @@ export async function DELETE(req) {
       where: { CommissionID: body.CommissionID },
     });
 
-    return Response.json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to delete commission" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete commission" }, { status: 500 });
   }
 }
