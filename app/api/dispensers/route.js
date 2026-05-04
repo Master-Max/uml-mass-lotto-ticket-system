@@ -71,3 +71,69 @@ export async function POST(req) {
     );
   }
 }
+
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+
+    const DispenserID = Number(body.DispenserID);
+
+    if (!DispenserID) {
+      return Response.json(
+        { error: "DispenserID is required" },
+        { status: 400 }
+      );
+    }
+
+    const dispenser = await prisma.dispenser.update({
+      where: { DispenserID },
+      data: {
+        DispenserNumber: Number(body.DispenserNumber),
+        DispenserAssignment: body.DispenserAssignment || null,
+        DispenserLayout: body.DispenserLayout || null,
+        PositionStatus: body.PositionStatus || "Active",
+        GameID: body.GameID ? Number(body.GameID) : null,
+        AgentID: body.AgentID ? Number(body.AgentID) : null,
+      },
+    });
+
+    return Response.json(dispenser);
+  } catch (error) {
+    console.error("PUT /api/dispensers error:", error);
+
+    return Response.json(
+      { error: "Failed to update dispenser" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const body = await req.json();
+
+    const DispenserID = Number(body.DispenserID);
+
+    if (!DispenserID) {
+      return Response.json(
+        { error: "DispenserID is required" },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await prisma.dispenser.delete({
+      where: { DispenserID },
+    });
+
+    return Response.json(deleted);
+  } catch (error) {
+    console.error("DELETE /api/dispensers error:", error);
+
+    return Response.json(
+      {
+        error: "Failed to delete dispenser. It may be used by ticket records.",
+      },
+      { status: 500 }
+    );
+  }
+}
