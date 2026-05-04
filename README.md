@@ -17,3 +17,6 @@ We can update tables in SQLite by making changes to our schema.prisma file
 
 After updating the schema.prisma file, we sync those changes with
   > yarn prisma migrate dev --name "message goes here"
+
+Additional prisma tool (essentially a SQL workbench)
+  > yarn prisma studio
