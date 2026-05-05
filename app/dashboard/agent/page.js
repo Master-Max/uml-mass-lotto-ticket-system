@@ -417,53 +417,135 @@ export default function AgentDashboard() {
               No daily summaries found.
             </div>
           ) : (
-            <div className="border p-4 rounded bg-white shadow-sm">
-              <div className="grid grid-cols-3">
+            <details className="border p-4 rounded bg-white shadow-sm">
+              <summary className="cursor-pointer list-none">
+                <div className="grid grid-cols-3 gap-4">
+                  <p>
+                    Date:{" "}
+                    {new Date(summaries[summaryIndex].SummaryDate).toLocaleDateString(
+                      "en-US",
+                      { timeZone: "America/New_York" }
+                    )}
+                  </p>
+
+                  <p>Tickets Sold: {summaries[summaryIndex].TotalTicketsSold}</p>
+
+                  <p>
+                    Sales: ${Number(summaries[summaryIndex].TotalOTCSales).toFixed(2)}
+                  </p>
+                </div>
+
+                <p className="mt-2 text-sm text-blue-600">
+                  Click to expand report details
+                </p>
+              </summary>
+
+              <div className="border-t mt-4 pt-4 text-sm space-y-2">
                 <p>
-                  Date:{" "}
-                  {new Date(summaries[summaryIndex].SummaryDate).toLocaleDateString()}
+                  <span className="font-medium">Summary ID:</span>{" "}
+                  {summaries[summaryIndex].SummaryID}
                 </p>
 
-                <p>Tickets Sold: {summaries[summaryIndex].TotalTicketsSold}</p>
+                <p>
+                  <span className="font-medium">Sales by Dispenser:</span> $
+                  {Number(summaries[summaryIndex].SalesDollarsByDispenser || 0).toFixed(2)}
+                </p>
 
                 <p>
-                  Sales: ${Number(summaries[summaryIndex].TotalOTCSales).toFixed(2)}
+                  <span className="font-medium">Total OTC Sales:</span> $
+                  {Number(summaries[summaryIndex].TotalOTCSales || 0).toFixed(2)}
                 </p>
+
+                <p>
+                  <span className="font-medium">Total Tickets Sold:</span>{" "}
+                  {summaries[summaryIndex].TotalTicketsSold}
+                </p>
+
+                {summaries[summaryIndex].commission && (
+                  <p>
+                    <span className="font-medium">Commission:</span>{" "}
+                    {summaries[summaryIndex].commission.CommissionName}
+                  </p>
+                )}
+
+                {summaries[summaryIndex].agent && (
+                  <p>
+                    <span className="font-medium">Agent:</span>{" "}
+                    {summaries[summaryIndex].agent.AgentName}
+                  </p>
+                )}
+
+                {summaries[summaryIndex].DailyControlSummary && (
+                  <div className="border rounded p-3 bg-gray-50 mt-3">
+                    <p className="font-medium mb-1">Daily Control Summary</p>
+                    <p className="text-gray-600">
+                      {summaries[summaryIndex].DailyControlSummary}
+                    </p>
+                  </div>
+                )}
+
+                {summaries[summaryIndex].ticketCountRecords?.length > 0 && (
+                  <div className="mt-4">
+                    <p className="font-medium mb-2">Linked Ticket Count Records</p>
+
+                    <div className="space-y-2">
+                      {summaries[summaryIndex].ticketCountRecords.map((record) => (
+                        <div
+                          key={record.RecordID}
+                          className="border rounded p-3 bg-gray-50"
+                        >
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <p>Record #{record.RecordID}</p>
+                            <p>Dispenser #{record.DispenserID}</p>
+                            <p>Game #{record.GameID}</p>
+                            <p>Tickets Sold: {record.TicketsSold ?? "N/A"}</p>
+                            <p>Start: {record.StartTicketNumber ?? "N/A"}</p>
+                            <p>End: {record.EndingTicketNumber ?? "N/A"}</p>
+                            <p>Status: {record.SoldOutStatus || "N/A"}</p>
+                            <p>
+                              Created:{" "}
+                              {record.createdAt
+                                ? new Date(record.createdAt).toLocaleString("en-US", {
+                                    timeZone: "America/New_York",
+                                  })
+                                : "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {summaries[summaryIndex].DailyControlSummary && (
-                <p className="mt-2 text-sm text-gray-600">
-                  {summaries[summaryIndex].DailyControlSummary}
-                </p>
-              )}
 
-              <div className="flex justify-between mt-4">
-                <button
-                  className="border px-3 py-2 rounded disabled:opacity-50"
-                  disabled={summaries.length <= 1}
-                  onClick={() =>
-                    setSummaryIndex((current) =>
-                      current === 0 ? summaries.length - 1 : current - 1
-                    )
-                  }
-                >
-                  Previous
-                </button>
-
-                <button
-                  className="border px-3 py-2 rounded disabled:opacity-50"
-                  disabled={summaries.length <= 1}
-                  onClick={() =>
-                    setSummaryIndex((current) =>
-                      current === summaries.length - 1 ? 0 : current + 1
-                    )
-                  }
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            </details>
           )}
+          <div className="flex justify-between mt-4">
+            <button
+              className="border px-3 py-2 rounded disabled:opacity-50"
+              disabled={summaries.length <= 1}
+              onClick={() =>
+                setSummaryIndex((current) =>
+                  current === 0 ? summaries.length - 1 : current - 1
+                )
+              }
+            >
+              Previous
+            </button>
+
+            <button
+              className="border px-3 py-2 rounded disabled:opacity-50"
+              disabled={summaries.length <= 1}
+              onClick={() =>
+                setSummaryIndex((current) =>
+                  current === summaries.length - 1 ? 0 : current + 1
+                )
+              }
+            >
+              Next
+            </button>
+          </div>
         </section>
       </div>
 
