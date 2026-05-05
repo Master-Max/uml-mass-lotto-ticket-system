@@ -521,31 +521,34 @@ export default function AgentDashboard() {
 
             </details>
           )}
-          <div className="flex justify-between mt-4">
-            <button
-              className="border px-3 py-2 rounded disabled:opacity-50"
-              disabled={summaries.length <= 1}
-              onClick={() =>
-                setSummaryIndex((current) =>
-                  current === 0 ? summaries.length - 1 : current - 1
-                )
-              }
-            >
-              Previous
-            </button>
+          {summaries.length === 0 ? <></> : (
+            <div className="flex justify-between mt-4">
+              <button
+                className="border px-3 py-2 rounded disabled:opacity-50"
+                disabled={summaries.length <= 1}
+                onClick={() =>
+                  setSummaryIndex((current) =>
+                    current === 0 ? summaries.length - 1 : current - 1
+                  )
+                }
+              >
+                Previous
+              </button>
 
-            <button
-              className="border px-3 py-2 rounded disabled:opacity-50"
-              disabled={summaries.length <= 1}
-              onClick={() =>
-                setSummaryIndex((current) =>
-                  current === summaries.length - 1 ? 0 : current + 1
-                )
-              }
-            >
-              Next
-            </button>
-          </div>
+              <button
+                className="border px-3 py-2 rounded disabled:opacity-50"
+                disabled={summaries.length <= 1}
+                onClick={() =>
+                  setSummaryIndex((current) =>
+                    current === summaries.length - 1 ? 0 : current + 1
+                  )
+                }
+              >
+                Next
+              </button>
+            </div>
+          )}
+
         </section>
       </div>
 
@@ -680,12 +683,22 @@ export default function AgentDashboard() {
 
                     <p>
                       Date:{" "}
-                      {record.createdAt
-                        ? new Date(record.createdAt).toLocaleDateString("en-US", {
-                            timeZone: "America/New_York",
-                          })
-                        : selectedReportDate}
+                      {(() => {
+                        const dateStr = record.recordDate || selectedReportDate; // "2026-05-04"
+                        const [year, month, day] = dateStr.split("-");
+
+                        const localDate = new Date(year, month - 1, day); // LOCAL time
+
+                        return localDate.toLocaleDateString("en-US", {
+                          timeZone: "America/New_York",
+                          month: "2-digit",
+                          day: "2-digit",
+                          year: "numeric",
+                        }).replace(/\//g, "-");
+                      })()}
                     </p>
+                    {/* <p>Test: {record.RecordDate}</p>
+                    <p>Test2: {selectedReportDate}</p> */}
                   </div>
 
                   {isComplete && (

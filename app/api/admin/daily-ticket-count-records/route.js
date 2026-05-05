@@ -19,6 +19,20 @@ function optionalDate(value) {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
+function optionalDateOnly(value) {
+  if (value === "" || value === null || value === undefined) {
+    return undefined;
+  }
+
+  const [year, month, day] = String(value).split("T")[0].split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return undefined;
+  }
+
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
 export async function GET() {
   try {
     const records = await prisma.dailyTicketCountRecord.findMany({
@@ -50,8 +64,8 @@ export async function POST(request) {
 
     const record = await prisma.dailyTicketCountRecord.create({
       data: {
-        RecordDate: optionalDate(body.RecordDate) ?? new Date(),
-        createdAt: optionalDate(body.createdAt),
+        RecordDate: optionalDateOnly(body.RecordDate) ?? new Date(),
+        createdAt: optionalDateOnly(body.createdAt),
 
         StartTicketNumber: optionalNumber(body.StartTicketNumber),
         EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
@@ -89,7 +103,7 @@ export async function PUT(request) {
     }
 
     const data = {
-      RecordDate: optionalDate(body.RecordDate) ?? new Date(),
+      RecordDate: optionalDateOnly(body.RecordDate) ?? new Date(),
       StartTicketNumber: optionalNumber(body.StartTicketNumber),
       EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
       SoldOutStatus: optionalNumber(body.EndingTicketNumber)===0? "Sold Out" : "In Stock",

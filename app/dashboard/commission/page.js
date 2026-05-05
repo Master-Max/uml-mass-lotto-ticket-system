@@ -15,6 +15,37 @@ export default function CommissionDashboard() {
   const [games, setGames] = useState([]);
   const [summaries, setSummaries] = useState([]);
   const [ticketRecords, setTicketRecords] = useState([]);
+  const [selectedSummaryDate, setSelectedSummaryDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
+  const filteredSummaries = summaries.filter((summary) => {
+    const summaryDate = new Date(summary.SummaryDate).toLocaleDateString("en-CA", {
+      timeZone: "America/New_York",
+    });
+
+    return summaryDate === selectedSummaryDate;
+  });
+
+  const filteredTicketRecords = ticketRecords.filter((record) => {
+    const recordDate = new Date(record.RecordDate).toLocaleDateString("en-CA", {
+      timeZone: "America/New_York",
+    });
+
+    return recordDate === selectedSummaryDate;
+  });
+
+  const ticketRecordsByAgent = filteredTicketRecords.reduce((groups, record) => {
+    const agentId = record.AgentID || "unknown";
+
+    if (!groups[agentId]) {
+      groups[agentId] = [];
+    }
+
+    groups[agentId].push(record);
+
+    return groups;
+  }, {});
 
   const [agentForm, setAgentForm] = useState({
     AgentName: "",
@@ -96,28 +127,55 @@ export default function CommissionDashboard() {
     loadDashboardData();
   }
 
-  async function runDailyReportForAgent(agent) {
-    const res = await fetch("/api/admin/run-daily-summary", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        AgentID: agent.AgentID,
-        CommissionID: COMMISSION_ID,
-      }),
-    });
+  // async function runDailyReportForAgent(agent) {
+  //   const res = await fetch("/api/admin/run-daily-summary", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       AgentID: agent.AgentID,
+  //       CommissionID: COMMISSION_ID,
+  //     }),
+  //   });
 
-    const data = await res.json().catch(() => null);
+  //   const data = await res.json().catch(() => null);
 
-    if (!res.ok) {
-      alert(data?.error || "Failed to run daily report");
-      return;
-    }
+  //   if (!res.ok) {
+  //     alert(data?.error || "Failed to run daily report");
+  //     return;
+  //   }
 
-    alert(`Daily report created for ${agent.AgentName}`);
-    loadDashboardData();
+  //   alert(`Daily report created for ${agent.AgentName}`);
+  //   loadDashboardData();
+  // }
+
+  async function runDailyReportForAgent(agent, summaryDate = selectedSummaryDate) {
+  const res = await fetch("/api/admin/daily-summaries", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      AgentID: agent.AgentID,
+      CommissionID: COMMISSION_ID,
+      SummaryDate: summaryDate,
+    }),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    alert(
+      data?.error ||
+        `Failed to create summary for ${agent.AgentName} on ${summaryDate}`
+    );
+    return;
   }
+
+  alert(`Summary created for ${agent.AgentName} on ${summaryDate}`);
+  await loadDashboardData();
+}
 
   async function createGame() {
     const res = await fetch("/api/admin/games", {
@@ -311,11 +369,75 @@ export default function CommissionDashboard() {
                   Agent ID: {agent.AgentID}
                 </p>
 
-                <button
+                {/* <button
                   onClick={() => runDailyReportForAgent(agent)}
                   className="mt-3 bg-purple-600 text-white px-3 py-2 rounded text-sm"
                 >
                   Run Daily Report
+                </button> */}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="border rounded-lg p-4 bg-white shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Run Daily Summaries</h2>
+            <p className="text-sm text-gray-500">
+              Generate summaries for the selected date.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="border px-3 py-2 rounded"
+              onClick={() => {
+                const date = new Date(`${selectedSummaryDate}T12:00:00`);
+                date.setDate(date.getDate() - 1);
+                setSelectedSummaryDate(date.toISOString().split("T")[0]);
+              }}
+            >
+              Previous Day
+            </button>
+
+            <input
+              type="date"
+              className="border p-2 rounded"
+              value={selectedSummaryDate}
+              onChange={(e) => setSelectedSummaryDate(e.target.value)}
+            />
+
+            <button
+              className="border px-3 py-2 rounded"
+              onClick={() => {
+                const date = new Date(`${selectedSummaryDate}T12:00:00`);
+                date.setDate(date.getDate() + 1);
+                setSelectedSummaryDate(date.toISOString().split("T")[0]);
+              }}
+            >
+              Next Day
+            </button>
+          </div>
+        </div>
+
+        {agents.length === 0 ? (
+          <p className="text-gray-500">No agents found.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {agents.map((agent) => (
+              <div key={agent.AgentID} className="border rounded p-3 bg-gray-50">
+                <p className="font-semibold">{agent.AgentName}</p>
+                <p className="text-sm text-gray-600">
+                  Agent ID: {agent.AgentID}
+                </p>
+
+                <button
+                   onClick={() => runDailyReportForAgent(agent, selectedSummaryDate)}
+                  className="mt-3 bg-purple-600 text-white px-3 py-2 rounded text-sm"
+                >
+                  Run Summary for {selectedSummaryDate}
                 </button>
               </div>
             ))}
@@ -323,6 +445,171 @@ export default function CommissionDashboard() {
         )}
       </section>
 
+      <section className="border rounded-lg p-4 bg-white shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <h2 className="text-xl font-semibold">Daily Summaries</h2>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="border px-3 py-2 rounded"
+              onClick={() => {
+                const date = new Date(`${selectedSummaryDate}T12:00:00`);
+                date.setDate(date.getDate() - 1);
+                setSelectedSummaryDate(date.toISOString().split("T")[0]);
+              }}
+            >
+              Previous Day
+            </button>
+
+            <input
+              type="date"
+              className="border p-2 rounded"
+              value={selectedSummaryDate}
+              onChange={(e) => setSelectedSummaryDate(e.target.value)}
+            />
+
+            <button
+              className="border px-3 py-2 rounded"
+              onClick={() => {
+                const date = new Date(`${selectedSummaryDate}T12:00:00`);
+                date.setDate(date.getDate() + 1);
+                setSelectedSummaryDate(date.toISOString().split("T")[0]);
+              }}
+            >
+              Next Day
+            </button>
+          </div>
+        </div>
+
+        {filteredSummaries.length === 0 ? (
+          <p className="text-gray-500">
+            No daily summaries found for {selectedSummaryDate}.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {filteredSummaries.map((summary) => (
+              <details
+                key={summary.SummaryID}
+                className="border rounded p-3 bg-gray-50"
+              >
+                <summary className="cursor-pointer font-medium">
+                  {new Date(summary.SummaryDate).toLocaleDateString("en-US", {
+                    timeZone: "America/New_York",
+                  })}{" "}
+                  — Agent #{summary.AgentID}
+                </summary>
+
+                <div className="mt-3 text-sm space-y-1">
+                  <p>Total Tickets Sold: {summary.TotalTicketsSold}</p>
+                  <p>
+                    Total OTC Sales: $
+                    {Number(summary.TotalOTCSales || 0).toFixed(2)}
+                  </p>
+                  <p>
+                    Sales By Dispenser: $
+                    {Number(summary.SalesDollarsByDispenser || 0).toFixed(2)}
+                  </p>
+
+                  {summary.DailyControlSummary && (
+                    <p className="text-gray-600">
+                      {summary.DailyControlSummary}
+                    </p>
+                  )}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="border rounded-lg p-4 bg-white shadow-sm  mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Daily Ticket Count Records</h2>
+
+          <p className="text-sm text-gray-500">
+            Showing records for {selectedSummaryDate}
+          </p>
+        </div>
+
+        {filteredTicketRecords.length === 0 ? (
+          <p className="text-gray-500">
+            No ticket count records found for {selectedSummaryDate}.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(ticketRecordsByAgent).map(([agentId, records]) => {
+              const agentName =
+                records[0]?.agent?.AgentName || `Agent #${agentId}`;
+
+              return (
+                <div key={agentId} className="border rounded p-3 bg-gray-50">
+                  <p className="font-semibold mb-2">
+                    {agentName} — {records.length} record
+                    {records.length === 1 ? "" : "s"}
+                  </p>
+
+                  <div className="space-y-3">
+                    {records.map((record) => (
+                      <details
+                        key={record.RecordID}
+                        className="border rounded p-3 bg-white"
+                      >
+                        <summary className="cursor-pointer font-medium">
+                          Record #{record.RecordID} — Dispenser{" "}
+                          {record.dispenser?.DispenserNumber ||
+                            record.DispenserID}
+                        </summary>
+
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                          <p>
+                            Date:{" "}
+                            {record.RecordDate
+                              ? new Date(record.RecordDate).toLocaleDateString(
+                                  "en-US",
+                                  { timeZone: "America/New_York" }
+                                )
+                              : "N/A"}
+                          </p>
+
+                          <p>
+                            Dispenser:{" "}
+                            {record.dispenser?.DispenserNumber || "N/A"}
+                          </p>
+
+                          <p>
+                            Game:{" "}
+                            {record.game
+                              ? `${record.game.GameNumber} - ${record.game.GameName}`
+                              : "N/A"}
+                          </p>
+
+                          <p>
+                            Start Ticket: {record.StartTicketNumber ?? "N/A"}
+                          </p>
+
+                          <p>
+                            Ending Ticket: {record.EndingTicketNumber ?? "N/A"}
+                          </p>
+
+                          <p>
+                            Tickets Sold: {record.TicketsSold ?? "N/A"}
+                          </p>
+
+                          <p>
+                            Sold Out Status: {record.SoldOutStatus || "N/A"}
+                          </p>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* CREATE NEW GAME */}
       <section className="border rounded-lg p-4 bg-white shadow-sm mb-6">
         <h2 className="text-xl font-semibold mb-4">Create New Game</h2>
 
@@ -411,6 +698,7 @@ export default function CommissionDashboard() {
         </div>
       </section>
 
+      {/* GAMES */}
       <section className="border rounded-lg p-4 bg-white shadow-sm mb-6">
         <h2 className="text-xl font-semibold mb-4">Games</h2>
 
@@ -463,93 +751,6 @@ export default function CommissionDashboard() {
         )}
       </section>
 
-      <section className="border rounded-lg p-4 bg-white shadow-sm mb-6">
-        <h2 className="text-xl font-semibold mb-4">Daily Summaries</h2>
-
-        {summaries.length === 0 ? (
-          <p className="text-gray-500">No daily summaries found.</p>
-        ) : (
-          <div className="space-y-3">
-            {summaries.map((summary) => (
-              <details
-                key={summary.SummaryID}
-                className="border rounded p-3 bg-gray-50"
-              >
-                <summary className="cursor-pointer font-medium">
-                  {new Date(summary.SummaryDate).toLocaleDateString("en-US", {
-                    timeZone: "America/New_York",
-                  })}{" "}
-                  — Agent #{summary.AgentID}
-                </summary>
-
-                <div className="mt-3 text-sm space-y-1">
-                  <p>Total Tickets Sold: {summary.TotalTicketsSold}</p>
-                  <p>
-                    Total OTC Sales: $
-                    {Number(summary.TotalOTCSales || 0).toFixed(2)}
-                  </p>
-                  {/* <p>
-                    Sales By Dispenser: $
-                    {Number(summary.SalesDollarsByDispenser || 0).toFixed(2)}
-                  </p> */}
-
-                  {summary.DailyControlSummary && (
-                    <p className="text-gray-600">
-                      {summary.DailyControlSummary}
-                    </p>
-                  )}
-                </div>
-              </details>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="border rounded-lg p-4 bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">
-          Daily Ticket Count Records
-        </h2>
-
-        {ticketRecords.length === 0 ? (
-          <p className="text-gray-500">No ticket count records found.</p>
-        ) : (
-          <div className="space-y-3">
-            {ticketRecords.map((record) => (
-              <details
-                key={record.RecordID}
-                className="border rounded p-3 bg-gray-50"
-              >
-                <summary className="cursor-pointer font-medium">
-                  Record #{record.RecordID} — Agent{" "}
-                  {record.agent?.AgentName || record.AgentID}
-                </summary>
-
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                  <p>
-                    Date:{" "}
-                    {record.createdAt
-                      ? new Date(record.createdAt).toLocaleDateString("en-US", {
-                          timeZone: "America/New_York",
-                        })
-                      : "N/A"}
-                  </p>
-                  <p>Dispenser: {record.dispenser?.DispenserNumber || "N/A"}</p>
-                  <p>
-                    Game:{" "}
-                    {record.game
-                      ? `${record.game.GameNumber} - ${record.game.GameName}`
-                      : "N/A"}
-                  </p>
-                  <p>Start Ticket: {record.StartTicketNumber ?? "N/A"}</p>
-                  <p>Ending Ticket: {record.EndingTicketNumber ?? "N/A"}</p>
-                  <p>Tickets Sold: {record.TicketsSold ?? "N/A"}</p>
-                  <p>Sold Out Status: {record.SoldOutStatus || "N/A"}</p>
-                </div>
-              </details>
-            ))}
-          </div>
-        )}
-      </section>
     </main>
   );
 }
