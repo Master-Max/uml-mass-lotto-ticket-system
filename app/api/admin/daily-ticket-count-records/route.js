@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+function optionalNumber(value) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isNaN(number) ? null : number;
+}
+
+function optionalDate(value) {
+  if (value === "" || value === null || value === undefined) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 export async function GET() {
   try {
     const records = await prisma.dailyTicketCountRecord.findMany({
@@ -11,7 +29,7 @@ export async function GET() {
         agent: true,
       },
       orderBy: {
-        RecordDate: "desc",
+        createdAt: "desc",
       },
     });
 
@@ -32,17 +50,14 @@ export async function POST(request) {
 
     const record = await prisma.dailyTicketCountRecord.create({
       data: {
-        RecordDate: new Date(body.RecordDate),
-        StartTicketNumber: Number(body.StartTicketNumber),
-        EndingTicketNumber: Number(body.EndingTicketNumber),
-        SoldOutStatus: body.SoldOutStatus,
-        TicketsSold: Number(body.TicketsSold),
-        SummaryID:
-          body.SummaryID === "" ||
-          body.SummaryID === null ||
-          body.SummaryID === undefined
-            ? null
-            : Number(body.SummaryID),
+        RecordDate: optionalDate(body.RecordDate) ?? new Date(),
+        createdAt: optionalDate(body.createdAt),
+
+        StartTicketNumber: optionalNumber(body.StartTicketNumber),
+        EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
+        SoldOutStatus: optionalNumber(body.EndingTicketNumber)===0? "Sold Out" : "In Stock",
+        TicketsSold: optionalNumber(body.TicketsSold),
+        SummaryID: optionalNumber(body.SummaryID),
         DispenserID: Number(body.DispenserID),
         GameID: Number(body.GameID),
         AgentID: Number(body.AgentID),
@@ -73,26 +88,27 @@ export async function PUT(request) {
       );
     }
 
+    const data = {
+      RecordDate: optionalDate(body.RecordDate) ?? new Date(),
+      StartTicketNumber: optionalNumber(body.StartTicketNumber),
+      EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
+      SoldOutStatus: optionalNumber(body.EndingTicketNumber)===0? "Sold Out" : "In Stock",
+      TicketsSold: optionalNumber(body.TicketsSold),
+      SummaryID: optionalNumber(body.SummaryID),
+      DispenserID: Number(body.DispenserID),
+      GameID: Number(body.GameID),
+      AgentID: Number(body.AgentID),
+    };
+
+    const createdAt = optionalDate(body.createdAt);
+
+    if (createdAt) {
+      data.createdAt = createdAt;
+    }
+
     const record = await prisma.dailyTicketCountRecord.update({
-      where: {
-        RecordID,
-      },
-      data: {
-        RecordDate: new Date(body.RecordDate),
-        StartTicketNumber: Number(body.StartTicketNumber),
-        EndingTicketNumber: Number(body.EndingTicketNumber),
-        SoldOutStatus: body.SoldOutStatus,
-        TicketsSold: Number(body.TicketsSold),
-        SummaryID:
-          body.SummaryID === "" ||
-          body.SummaryID === null ||
-          body.SummaryID === undefined
-            ? null
-            : Number(body.SummaryID),
-        DispenserID: Number(body.DispenserID),
-        GameID: Number(body.GameID),
-        AgentID: Number(body.AgentID),
-      },
+      where: { RecordID },
+      data,
     });
 
     return NextResponse.json(record);
@@ -101,36 +117,6 @@ export async function PUT(request) {
 
     return NextResponse.json(
       { error: "Failed to update daily ticket count record" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const body = await request.json();
-
-    const RecordID = Number(body.RecordID);
-
-    if (!RecordID) {
-      return NextResponse.json(
-        { error: "RecordID is required" },
-        { status: 400 }
-      );
-    }
-
-    const deleted = await prisma.dailyTicketCountRecord.delete({
-      where: {
-        RecordID,
-      },
-    });
-
-    return NextResponse.json(deleted);
-  } catch (error) {
-    console.error("DELETE /api/admin/daily-ticket-count-records error:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete daily ticket count record" },
       { status: 500 }
     );
   }

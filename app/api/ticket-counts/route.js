@@ -4,26 +4,27 @@ function optionalNumber(value) {
   if (value === "" || value === null || value === undefined) {
     return null;
   }
-  return Number(value);
+
+  const number = Number(value);
+
+  return Number.isNaN(number) ? null : number;
+}
+
+function getBackendRecordDate() {
+  return new Date();
 }
 
 export async function POST(req) {
   try {
     const body = await req.json();
 
-    console.log("================================")
-    console.log(body.EndingTicketNumber)
-    console.log(optionalNumber(Number(body.EndingTicketNumber)))
-    console.log(optionalNumber(body.EndingTicketNumber))
-    console.log("================================")
-    
     const record = await prisma.dailyTicketCountRecord.create({
       data: {
-        RecordDate: new Date(body.RecordDate),
+        RecordDate: getBackendRecordDate(),
         StartTicketNumber: optionalNumber(body.StartTicketNumber),
         EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
-        SoldOutStatus: body.SoldOutStatus || null,
-        TicketsSold: optionalNumber(Number(body.TicketsSold)),
+        SoldOutStatus: optionalNumber(body.EndingTicketNumber)===0? "Sold Out" : "In Stock",
+        TicketsSold: optionalNumber(body.TicketsSold),
         SummaryID: optionalNumber(body.SummaryID),
         DispenserID: Number(body.DispenserID),
         GameID: Number(body.GameID),
@@ -51,10 +52,10 @@ export async function PUT(req) {
     const record = await prisma.dailyTicketCountRecord.update({
       where: { RecordID },
       data: {
-        RecordDate: new Date(body.RecordDate),
+        RecordDate: getBackendRecordDate(),
         StartTicketNumber: optionalNumber(body.StartTicketNumber),
         EndingTicketNumber: optionalNumber(body.EndingTicketNumber),
-        SoldOutStatus: body.SoldOutStatus || null,
+        SoldOutStatus: optionalNumber(body.EndingTicketNumber)===0? "Sold Out" : "In Stock",
         TicketsSold: optionalNumber(body.TicketsSold),
         SummaryID: optionalNumber(body.SummaryID),
         DispenserID: Number(body.DispenserID),

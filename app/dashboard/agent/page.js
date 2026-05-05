@@ -301,6 +301,7 @@ export default function AgentDashboard() {
   }
 
   const filteredReports = getReportsForDate();
+  console.log(filteredReports)
 
   function openReportModal(report) {
     setActiveReport({
@@ -370,13 +371,15 @@ export default function AgentDashboard() {
 
   return (
     <div className="p-6">
+
+      {/* Agent Identifiaction Header */}
       <div className="flex gap-4">
         <h1 className="text-xl font-bold">
           {agent ? agent.AgentName : "Agent Dashboard"}
         </h1>
 
         <p className="text-sm text-gray-600 align-bottom">
-          {agent?.Location || "No location listed"}
+          {"Location: " + agent?.Location || "No location listed"}
         </p>
 
         {agent?.commission && (
@@ -388,17 +391,19 @@ export default function AgentDashboard() {
 
       {/* Reports and Daily Summaries */}
       <div>
+        {/* AGENT DATA */}
         <section className="border p-4 rounded mb-6 w-full">
-          <h2 className="font-semibold mb-3">Reports</h2>
+          <h2 className="font-semibold mb-3">Agent Data</h2>
           <div className="flex justify-start p-2">
             <h3 className="m-2">Total Assigned Dispensers: {dispensers.length}</h3>
             <h3 className="m-2">Total Prior Daily Summaries: {summaries.length}</h3>
           </div>
         </section>
 
+        {/* REPORTS */}
         <section className="border p-4 rounded mb-6 w-full">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Daily Summaries</h2>
+            <h2 className="font-semibold">Reports</h2>
 
             {summaries.length > 0 && (
               <p className="text-sm text-gray-500">
@@ -462,21 +467,26 @@ export default function AgentDashboard() {
         </section>
       </div>
 
-      {/* Today's Reports */}
+      {/* DAILY TICKET REPORTS */}
       <div>
-        <section className="border p-4 rounded mb-6">
+        {/* <section className="border p-4 rounded mb-6">
           <h2 className="font-semibold mb-3">Today's Reports</h2>
           {ticketRecords.length}
           {JSON.stringify(ticketRecords[0])}
-        </section>
+        </section> */}
         <section className="border p-4 rounded mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">Daily Ticket Reports</h2>
-
-            <p className="text-sm text-gray-500">
-              {reportsForSelectedDate.length} report
-              {reportsForSelectedDate.length === 1 ? "" : "s"} found
-            </p>
+            <div className="flex gap-4">
+              <p className="text-sm text-gray-500">
+                {reportsForSelectedDate.length} report
+                {reportsForSelectedDate.length === 1 ? "" : "s"} completed or started
+              </p>
+              <p className="text-sm text-gray-500">
+                {dispensers.length - reportsForSelectedDate.length} report
+                {dispensers.length - reportsForSelectedDate.length === 1 ? "" : "s"} todo
+              </p>
+            </div>
           </div>
           <div className="flex justify-between">
             <div className="flex flex-wrap gap-2 mb-4">
@@ -588,8 +598,10 @@ export default function AgentDashboard() {
 
                     <p>
                       Date:{" "}
-                      {record.RecordDate
-                        ? new Date(record.RecordDate).toLocaleDateString()
+                      {record.createdAt
+                        ? new Date(record.createdAt).toLocaleDateString("en-US", {
+                            timeZone: "America/New_York",
+                          })
                         : selectedReportDate}
                     </p>
                   </div>
