@@ -54,10 +54,10 @@ model DailySalesSummary {
 model DailyTicketCountRecord {
   RecordID           Int      @id @default(autoincrement())
   RecordDate         DateTime
-  StartTicketNumber  Int
-  EndingTicketNumber Int
-  SoldOutStatus      String
-  TicketsSold        Int
+  StartTicketNumber  Int?
+  EndingTicketNumber Int?
+  SoldOutStatus      String?
+  TicketsSold        Int?
 
   SummaryID   Int?
   DispenserID Int
