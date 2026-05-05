@@ -18,8 +18,11 @@ export default function AgentDashboard() {
   const [selectedReportDate, setSelectedReportDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [selectedSummaryDate, setSelectedSummaryDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [expandedReportId, setExpandedReportId] = useState(null);
-  const [reportFilter, setReportFilter] = useState("started");
+  const [reportFilter, setReportFilter] = useState("complete");
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
   
@@ -37,6 +40,16 @@ export default function AgentDashboard() {
     PositionStatus: "Active",
     GameID: "",
   });
+
+  const summariesForSelectedDate = summaries.filter((summary) => {
+    const summaryDate = new Date(summary.SummaryDate).toLocaleDateString("en-CA", {
+      timeZone: "America/New_York",
+    });
+
+    return summaryDate === selectedSummaryDate;
+  });
+
+  const selectedSummary = summariesForSelectedDate[0];
 
   useEffect(() => {
     if (agentId) {
@@ -209,6 +222,12 @@ export default function AgentDashboard() {
 
   function formatDateInput(date) {
     return date.toISOString().split("T")[0];
+  }
+
+  function changeSummaryDate(days) {
+    const currentDate = new Date(`${selectedSummaryDate}T12:00:00`);
+    currentDate.setDate(currentDate.getDate() + days);
+    setSelectedSummaryDate(currentDate.toISOString().split("T")[0]);
   }
 
   function changeReportDate(days) {
@@ -403,18 +422,41 @@ export default function AgentDashboard() {
         {/* REPORTS */}
         <section className="border p-4 rounded mb-6 w-full">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Reports</h2>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+              <h2 className="font-semibold">Daily Summary</h2>
 
-            {summaries.length > 0 && (
-              <p className="text-sm text-gray-500">
-                {summaryIndex + 1} of {summaries.length}
-              </p>
-            )}
+              <div className="flex items-center gap-2">
+                <button
+                  className="border px-3 py-2 rounded"
+                  onClick={() => changeSummaryDate(-1)}
+                >
+                  Previous Day
+                </button>
+
+                <input
+                  type="date"
+                  className="border p-2 rounded"
+                  value={selectedSummaryDate}
+                  onChange={(e) => setSelectedSummaryDate(e.target.value)}
+                />
+
+                <button
+                  className="border px-3 py-2 rounded"
+                  onClick={() => changeSummaryDate(1)}
+                >
+                  Next Day
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-500">
+              Showing summary for {selectedReportDate}
+            </p>
           </div>
 
-          {summaries.length === 0 ? (
+          {!selectedSummary ? (
             <div className="border p-4 rounded text-gray-500">
-              No daily summaries found.
+              No daily summary found for {selectedSummaryDate}..
             </div>
           ) : (
             <details className="border p-4 rounded bg-white shadow-sm">
@@ -422,74 +464,74 @@ export default function AgentDashboard() {
                 <div className="grid grid-cols-3 gap-4">
                   <p>
                     Date:{" "}
-                    {new Date(summaries[summaryIndex].SummaryDate).toLocaleDateString(
+                    {new Date(selectedSummary.SummaryDate).toLocaleDateString(
                       "en-US",
                       { timeZone: "America/New_York" }
                     )}
                   </p>
 
-                  <p>Tickets Sold: {summaries[summaryIndex].TotalTicketsSold}</p>
+                  <p>Tickets Sold: {selectedSummary.TotalTicketsSold}</p>
 
                   <p>
-                    Sales: ${Number(summaries[summaryIndex].TotalOTCSales).toFixed(2)}
+                    Sales: ${Number(selectedSummary.TotalOTCSales).toFixed(2)}
                   </p>
                 </div>
 
                 <p className="mt-2 text-sm text-blue-600">
-                  Click to expand report details
+                  Click to expand summary details
                 </p>
               </summary>
 
               <div className="border-t mt-4 pt-4 text-sm space-y-2">
                 <p>
                   <span className="font-medium">Summary ID:</span>{" "}
-                  {summaries[summaryIndex].SummaryID}
+                  {selectedSummary.SummaryID}
                 </p>
 
                 <p>
                   <span className="font-medium">Sales by Dispenser:</span> $
-                  {Number(summaries[summaryIndex].SalesDollarsByDispenser || 0).toFixed(2)}
+                  {Number(selectedSummary.SalesDollarsByDispenser || 0).toFixed(2)}
                 </p>
 
                 <p>
                   <span className="font-medium">Total OTC Sales:</span> $
-                  {Number(summaries[summaryIndex].TotalOTCSales || 0).toFixed(2)}
+                  {Number(selectedSummary.TotalOTCSales || 0).toFixed(2)}
                 </p>
 
                 <p>
                   <span className="font-medium">Total Tickets Sold:</span>{" "}
-                  {summaries[summaryIndex].TotalTicketsSold}
+                  {selectedSummary.TotalTicketsSold}
                 </p>
 
-                {summaries[summaryIndex].commission && (
+                {selectedSummary.commission && (
                   <p>
                     <span className="font-medium">Commission:</span>{" "}
-                    {summaries[summaryIndex].commission.CommissionName}
+                    {selectedSummary.commission.CommissionName}
                   </p>
                 )}
 
-                {summaries[summaryIndex].agent && (
+                {selectedSummary.agent && (
                   <p>
                     <span className="font-medium">Agent:</span>{" "}
-                    {summaries[summaryIndex].agent.AgentName}
+                    {selectedSummary.agent.AgentName}
                   </p>
                 )}
 
-                {summaries[summaryIndex].DailyControlSummary && (
+                {selectedSummary.DailyControlSummary && (
                   <div className="border rounded p-3 bg-gray-50 mt-3">
                     <p className="font-medium mb-1">Daily Control Summary</p>
                     <p className="text-gray-600">
-                      {summaries[summaryIndex].DailyControlSummary}
+                      {selectedSummary.DailyControlSummary}
                     </p>
                   </div>
                 )}
 
-                {summaries[summaryIndex].ticketCountRecords?.length > 0 && (
+                {selectedSummary.ticketCountRecords?.length > 0 && (
                   <div className="mt-4">
                     <p className="font-medium mb-2">Linked Ticket Count Records</p>
 
                     <div className="space-y-2">
-                      {summaries[summaryIndex].ticketCountRecords.map((record) => (
+                      {selectedSummary.ticketCountRecords.map((record) => (
                         <div
                           key={record.RecordID}
                           className="border rounded p-3 bg-gray-50"
@@ -502,14 +544,6 @@ export default function AgentDashboard() {
                             <p>Start: {record.StartTicketNumber ?? "N/A"}</p>
                             <p>End: {record.EndingTicketNumber ?? "N/A"}</p>
                             <p>Status: {record.SoldOutStatus || "N/A"}</p>
-                            <p>
-                              Created:{" "}
-                              {record.createdAt
-                                ? new Date(record.createdAt).toLocaleString("en-US", {
-                                    timeZone: "America/New_York",
-                                  })
-                                : "N/A"}
-                            </p>
                           </div>
                         </div>
                       ))}
@@ -517,38 +551,8 @@ export default function AgentDashboard() {
                   </div>
                 )}
               </div>
-
-
             </details>
           )}
-          {summaries.length === 0 ? <></> : (
-            <div className="flex justify-between mt-4">
-              <button
-                className="border px-3 py-2 rounded disabled:opacity-50"
-                disabled={summaries.length <= 1}
-                onClick={() =>
-                  setSummaryIndex((current) =>
-                    current === 0 ? summaries.length - 1 : current - 1
-                  )
-                }
-              >
-                Previous
-              </button>
-
-              <button
-                className="border px-3 py-2 rounded disabled:opacity-50"
-                disabled={summaries.length <= 1}
-                onClick={() =>
-                  setSummaryIndex((current) =>
-                    current === summaries.length - 1 ? 0 : current + 1
-                  )
-                }
-              >
-                Next
-              </button>
-            </div>
-          )}
-
         </section>
       </div>
 
