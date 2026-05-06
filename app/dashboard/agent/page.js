@@ -1,9 +1,9 @@
 "use client";
 
-import { act, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function AgentDashboard() {
+function AgentDashboardContent() {
   const searchParams = useSearchParams();
   const agentId = searchParams.get("id");
 
@@ -1091,5 +1091,13 @@ export default function AgentDashboard() {
       )}
 
     </div>
+  );
+}
+
+export default function AgentDashboard() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading agent dashboard...</div>}>
+      <AgentDashboardContent />
+    </Suspense>
   );
 }
